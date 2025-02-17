@@ -8,27 +8,36 @@ export const AppContextProvider = (props) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userData, setUserData] = useState(false);
 
-    // Load user data from localStorage on initial render
-    useEffect(() => {
-        const storedUserData = localStorage.getItem('userData');
-        if (storedUserData) {
-            setUserData(JSON.parse(storedUserData));
-            setIsLoggedIn(true);
-        }
-    }, []);
-
-    const getUserData = async () => {
+    const getAuthStatus = async () => {
         try {
-            const { data } = await axios.get(backendUrl + '/api/user/data');
-            if (!data.success) {
-                toast.error(data.message);
+            const { data } = await axios.get(backendUrl + '/api/auth/is-auth', {
+                withCredentials: true,
+            });
+            if (data.success) {
+                setIsLoggedIn(true);
+                getUserData();
             }
-            setUserData(data.data);
-            localStorage.setItem('userData', JSON.stringify(data.data)); // Save user data to localStorage
         } catch (error) {
             toast.error(error.message);
         }
     }
+
+    const getUserData = async () => {
+        try {
+            const { data } = await axios.get(backendUrl + '/api/user/data', {
+                withCredentials: true,
+            });
+            data.success ? setUserData(data.data) : toast.error(data.message);
+        } catch (error) {
+            toast.error(error.message);
+        }
+    }
+
+    // Load user data from localStorage on initial render
+    useEffect(() => {
+        getAuthStatus();
+    }, []);
+
     const value = {
         backendUrl,
         isLoggedIn, setIsLoggedIn,
